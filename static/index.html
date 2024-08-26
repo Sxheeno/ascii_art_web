@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASCII Art Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1e1e1e;
+            color: #c7c7c7;
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        label {
+            font-weight: bold;
+            color: #c7c7c7;
+        }
+        textarea, select, input[type="submit"] {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            box-sizing: border-box;
+            color: #c7c7c7;
+        }
+        textarea:focus, select:focus, input[type="submit"]:focus {
+            outline: none;
+            border-color: #6a6a6a;
+        }
+        input[type="submit"] {
+            background-color: #4a90e2;
+            border: none;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        input[type="submit"]:hover {
+            background-color: #357abd;
+        }
+        #artContainer {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #555;
+            background: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            overflow: auto;
+            resize: both;
+        }
+        #art {
+            white-space: pre;
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASCII Art Generator</h1>
+    <form id="artForm" method="post" action="/generate-ascii-art">
+        <label for="input">Text:</label><br>
+        <textarea id="input" name="input" rows="4" cols="50"></textarea><br>
+        <label for="font">Font:</label><br>
+        <select id="font" name="font">
+            <option value="standard">Standard</option>
+            <option value="shadow">Shadow</option>
+            <option value="thinkertoy">Thinkertoy</option>
+        </select><br>
+        <input type="submit" value="Generate">
+    </form>
+
+    <div id="artContainer">
+        <div id="art"></div>
+    </div>
+
+    <script>
+        document.getElementById('artForm').onsubmit = async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const response = await fetch('/generate-ascii-art', {
+                method: 'POST',
+                body: formData
+            });
+            const art = await response.text();
+            document.getElementById('art').textContent = art;
+        };
+    </script>
+</body>
+</html>
