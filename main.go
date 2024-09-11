@@ -132,18 +132,32 @@ func handleError(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "500 - Internal Server Error", http.StatusInternalServerError)
 }
 
+// Middleware to catch unknown routes and redirect to 404 handler.
+func catchAll(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if the path is exactly "/" or "/ascii-art".
+		if r.URL.Path != "/" && r.URL.Path != "/ascii-art" {
+			handleNotFound(w, r)
+			return
+		} else {
+            handleIndex(w,r)
+        }
+		// If the path matches, continue to the next handler.
+		
+	})
+}
+
 
 func main() {
 	// Setup HTTP handlers
 	http.HandleFunc("/ascii-art", handleGenerateAsciiArt)
-	http.HandleFunc("/", handleIndex)
+	//http.HandleFunc("/", handleIndex)
 
-	// Custom error handlers
-	http.HandleFunc("/404", handleNotFound)
-	http.HandleFunc("/500", handleError)
+	http.Handle("/", catchAll(http.DefaultServeMux))
     
 
 	// Log server status and start the server
 	fmt.Println("Server is running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+//405, //403 ,/500
