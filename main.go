@@ -88,9 +88,9 @@ func generateAsciiArt(input, font string) string {
     return result.String()
 }
 
-// handleGenerateAsciiArt handles the ASCII art generation requests.
 func handleGenerateAsciiArt(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodPost {
+        
         input := r.FormValue("input")
         font := r.FormValue("font")
         if font == "" {
