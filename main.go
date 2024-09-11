@@ -30,7 +30,11 @@ func generateAsciiArt(input, font string) string {
 			for _, char := range inputLine {
 				art, ok := standardFont[char]
 				if !ok {
-					art = standardFont[' '] // Default to space if character not found
+                    if char == 32 {
+					    art = standardFont[' ']
+                    } else {
+                        http.Error()
+                    }
 				}
 
 				for i := range art {
@@ -50,7 +54,9 @@ func generateAsciiArt(input, font string) string {
 			for _, char := range inputLine {
 				art, ok := shadowFont[char]
 				if !ok {
-					art = shadowFont[' '] // Default to space if character not found
+                    if char == 32 {
+					    art = shadowFont[' '] // Default to space if character not found
+                    }
 				}
 
 				for i := range art {
@@ -70,8 +76,10 @@ func generateAsciiArt(input, font string) string {
 			for _, char := range inputLine {
 				art, ok := thinkertoyFont[char]
 				if !ok {
-					art = thinkertoyFont[' '] // Default to space if character not found
-				}
+                    if char == 32 {
+					    art = thinkertoyFont[' '] // Default to space if character not found
+                    }
+                }
 
 				for i := range art {
 					lines[i] += art[i]
@@ -125,6 +133,9 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 // handleNotFound handles 404 errors.
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "404 - Page Not Found", http.StatusNotFound)
+}
+func handleNotAllowed(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "400 - Bad Request ", http.StatusNotFound)
 }
 
 // handleError handles other server errors.
