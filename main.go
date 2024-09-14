@@ -5,11 +5,12 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
 // generateAsciiArt creates ASCII art from the input text using the specified font.
-func generateAsciiArt(input, font string) string {
+func generateAsciiArt(w http.ResponseWriter, input, font string) string {
 	if font != "standard" {
 		if font == "shadow" {
 			font = "shadow"
@@ -30,11 +31,13 @@ func generateAsciiArt(input, font string) string {
 			for _, char := range inputLine {
 				art, ok := standardFont[char]
 				if !ok {
-                    if char == 32 {
-					    art = standardFont[' ']
-                    } else {
-                        http.Error()
-                    }
+					if char == 32 { // ASCII code for space
+						art = standardFont[' ']
+					} else {
+						log.Printf("Character %c is not a valid ASCII art character", char)
+						http.Error(w, fmt.Sprintf("400 - Bad Request: Unsupported character '%c'", char), http.StatusBadRequest)
+						return ""
+					}
 				}
 
 				for i := range art {
@@ -54,9 +57,13 @@ func generateAsciiArt(input, font string) string {
 			for _, char := range inputLine {
 				art, ok := shadowFont[char]
 				if !ok {
-                    if char == 32 {
-					    art = shadowFont[' '] // Default to space if character not found
-                    }
+					if char == 32 { // ASCII code for space
+						art = standardFont[' ']
+					} else {
+						log.Printf("Character %c is not a valid ASCII art character", char)
+						http.Error(w, fmt.Sprintf("400 - Bad Request: Unsupported character '%c'", char), http.StatusBadRequest)
+						return ""
+					}
 				}
 
 				for i := range art {
@@ -76,10 +83,14 @@ func generateAsciiArt(input, font string) string {
 			for _, char := range inputLine {
 				art, ok := thinkertoyFont[char]
 				if !ok {
-                    if char == 32 {
-					    art = thinkertoyFont[' '] // Default to space if character not found
-                    }
-                }
+					if char == 32 { // ASCII code for space
+						art = standardFont[' ']
+					} else {
+						log.Printf("Character %c is not a valid ASCII art character", char)
+						http.Error(w, fmt.Sprintf("400 - Bad Request: Unsupported character '%c'", char), http.StatusBadRequest)
+						return ""
+					}
+				}
 
 				for i := range art {
 					lines[i] += art[i]
@@ -106,7 +117,11 @@ func handleGenerateAsciiArt(w http.ResponseWriter, r *http.Request) {
 			font = "standard"
 		}
 		log.Printf("Generating ASCII art for input: %s with font: %s", input, font)
-		asciiArt := generateAsciiArt(input, font)
+		asciiArt := generateAsciiArt(w, input, font)
+
+		if asciiArt == "" {
+			return // If an error was already sent, stop further processing
+		}
 
 		// Serve the ASCII art using a separate HTML template
 		data := struct {
@@ -134,9 +149,6 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "404 - Page Not Found", http.StatusNotFound)
 }
-func handleNotAllowed(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "400 - Bad Request ", http.StatusNotFound)
-}
 
 // handleError handles other server errors.
 func handleError(w http.ResponseWriter, r *http.Request) {
@@ -151,24 +163,53 @@ func catchAll(next http.Handler) http.Handler {
 			handleNotFound(w, r)
 			return
 		} else {
-            handleIndex(w,r)
-        }
-		// If the path matches, continue to the next handler.
-		
+			handleIndex(w, r)
+		}
 	})
+}
+
+func loadFont(filename string) error {
+	_, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 
 func main() {
-	// Setup HTTP handlers
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		var err error
+
+		// Load fonts
+		err = loadFont("standard.txt")
+		if err != nil {
+			log.Printf("500 - Internal Server Error: Failed to load standard font: %v", err)
+			http.Error(w, "500 - Internal Server Error: Failed to load standard font", http.StatusInternalServerError)
+			return
+		}
+
+		err = loadFont("shadow.txt")
+		if err != nil {
+			log.Printf("500 - Internal Server Error: Failed to load shadow font: %v", err)
+			http.Error(w, "500 - Internal Server Error: Failed to load shadow font", http.StatusInternalServerError)
+			return
+		}
+
+		err = loadFont("thinkertoy.txt")
+		if err != nil {
+			log.Printf("500 - Internal Server Error: Failed to load thinkertoy font: %v", err)
+			http.Error(w, "500 - Internal Server Error: Failed to load thinkertoy font", http.StatusInternalServerError)
+			return
+		}
+
+		catchAll(http.DefaultServeMux).ServeHTTP(w, r)
+	})
+
 	http.HandleFunc("/ascii-art", handleGenerateAsciiArt)
-	//http.HandleFunc("/", handleIndex)
+	//http.Handle("/", catchAll(http.DefaultServeMux))
 
-	http.Handle("/", catchAll(http.DefaultServeMux))
-    
-
-	// Log server status and start the server
 	fmt.Println("Server is running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-//405, //403 ,/500
+
